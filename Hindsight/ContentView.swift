@@ -1,10 +1,3 @@
-//
-//  ContentView.swift
-//  Hindsight
-//
-//  Created by Ryan Goldstein on 7/1/24.
-//
-
 import SwiftUI
 
 struct ContentView: View {
