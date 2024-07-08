@@ -30,9 +30,11 @@ struct HindsightApp: App {
 }
 
 func scheduleNotificationTimer(time: TimeInterval) {
-    Timer.scheduledTimer(withTimeInterval: time, repeats: false, block: { _ in
-        notificationTimerElapsed()
-    })
+    DispatchQueue.main.async {
+        Timer.scheduledTimer(withTimeInterval: time, repeats: false, block: { _ in
+            notificationTimerElapsed()
+        })
+    }
 }
 
 func notificationTimerElapsed() {
@@ -59,7 +61,7 @@ func sendNotification(playSound: Bool) async {
     if playSound {
         content.sound = UNNotificationSound.criticalSoundNamed(.init("StarTrekAlert"))
     }
-    let request = UNNotificationRequest(identifier: "test", content: content, trigger: nil)
+    let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
     do {
         try await center.add(request)
     } catch {
