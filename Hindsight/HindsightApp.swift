@@ -1,5 +1,6 @@
 import SwiftUI
 import UserNotifications
+import AVFoundation
 
 @main
 struct HindsightApp: App {
@@ -8,10 +9,9 @@ struct HindsightApp: App {
     init() {
         _frontApp = FrontAppObserver();
         NSWorkspace.shared.notificationCenter.addObserver(self, selector: #selector(_frontApp.recvNotification(_:)), name: NSWorkspace.didHideApplicationNotification, object: nil);
-
         
         let center = UNUserNotificationCenter.current()
-
+        
         Task {
             do {
                 try await center.requestAuthorization(options: [.alert, .sound, .badge])
@@ -38,17 +38,12 @@ func scheduleNotificationTimer(time: TimeInterval) {
 }
 
 func notificationTimerElapsed() {
-    // TODO: it would be great to detect if I'm actually in a zoom meeting
-    let runningZoomApps = NSWorkspace.shared.runningApplications.filter { app in app.localizedName!.contains("zoom.us")
-    }
-    let isAnyZoomOpen = !runningZoomApps.isEmpty
-    let isAnyZoomActive = !runningZoomApps.filter { app in app.isActive }.isEmpty
     // Don't interrupt me while in a meeting - wait a minute and try again
-    if isAnyZoomActive {
+    if isAnyCameraOn() {
         scheduleNotificationTimer(time: 60)
     } else {
         Task {
-            await sendNotification(playSound: !isAnyZoomOpen)
+            await sendNotification(playSound: true)
         }
     }
 }
@@ -76,3 +71,18 @@ class FrontAppObserver {
     }
 }
 
+func isAnyCameraOn() -> Bool {
+    let deviceDescoverySession = AVCaptureDevice.DiscoverySession.init(
+                                    deviceTypes: [.builtInWideAngleCamera,
+                                                  .externalUnknown],
+                                    mediaType: AVMediaType.video,
+                                    position: AVCaptureDevice.Position.unspecified)
+        
+    for device in deviceDescoverySession.devices {
+        if Camera(captureDevice: device).isOn() {
+            return true;
+        }
+    }
+    
+    return false;
+}
